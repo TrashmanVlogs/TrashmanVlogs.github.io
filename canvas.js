@@ -1,39 +1,50 @@
+
 ////////////////////////////////////////
 ////////Made by Maclane Owen////////////
 ////////////////////////////////////////
 
-var NAME_FONT = "600 64px Comic Sans MS, sans";
-
-var POINTS = 100;
-var POINT_RADIUS = 1.5;
+var NAME_FONT = "600 "+ Math.round(0.05*window.innerHeight) + "px Arial, sans";
+var POINTS = 75;
+var POINT_RADIUS = 0.00078125;
 var POINT_COLOR = "rgba(255,255,255,0.5)";
 var LINE_COLOR = "rgba(255,255,255,0.5)";
 var FILL_COLOR = "rgba(255,255,255,1)";
-var BACKGROUND_COLOR = "#111111";
+var BACKGROUND_COLOR = "#333333";
 var TRANSPARENT = "rgba(0,0,0,0)";
-var MIN_SPEED = 0.5;
-var MAX_SPEED = 1.5;
-var MAX_DISTANCE = 250;
+var MIN_SPEED = 0.00026041667;
+var MAX_SPEED = 0.00078125;
+var MAX_DISTANCE = 0.13020833333;
 var TRANSPARENCY_MULTIPLIER = 1;
 var FRAMERATE_MULTIPLIER = 16.6;
-var SCROLL_SMOOTHING = 0.5;
-var SCROLL_MULTIPLIER = 0.66;
+var SCROLL_SMOOTHING = 0.1;
+var SCROLL_MULTIPLIER = 0.75;
 
 function main(){
+    //Rewriting a constant is bad, but this should allow proper scaling
+    POINT_RADIUS *= window.innerWidth;
+    MAX_DISTANCE *= window.innerWidth;
+    MIN_SPEED *= window.innerWidth;
+    MAX_SPEED *= window.innerWidth;
+    //Rounds to the nearest 0.5
+    POINT_RADIUS = Math.round(2*POINT_RADIUS)/2;
+    MAX_DISTANCE = Math.round(2*MAX_DISTANCE)/2;
+    MIN_SPEED = Math.round(2*MIN_SPEED)/2;
+    MAX_SPEED = Math.round(2*MAX_SPEED)/2;
+    
     backgroundLoop();
     transitionLoop();
 }
 
 function transitionLoop(){
     console.log("Transition Canvas Loaded");
-
+    
     
     var currScroll = 0;
 
 
     var canvas = document.getElementById("canvas2");
     canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight/2.5;
+    canvas.height = window.innerHeight/3;
 
     var c = canvas.getContext("2d");
     
@@ -48,10 +59,10 @@ function transitionLoop(){
 	currScroll += (scrollPos-currScroll)*SCROLL_SMOOTHING;
 	
 	c.font = NAME_FONT;
-	c.fillStyle = BACKGROUND_COLOR;
+	c.fillStyle = "#444444";
 	c.textAlign = "center";
-	c.fillText("Maclane Owen", canvas.width/2, Math.min(canvas.height/2,adjustedPos));
-	console.log(adjustedPos);
+	c.fillText("Maclane Owen", canvas.width/2, Math.min(canvas.height*0.625,adjustedPos));
+	//console.log(adjustedPos);
     }
     
     function animate(){
@@ -87,8 +98,8 @@ function backgroundLoop(){
 	return false;
     }
     
-    function genPath(onEdge){
-	let path = {};
+    function createPoint(onEdge){
+	let point = {};
 	
 	let randX = Math.random()*window.innerWidth;
 	let randY = Math.random()*window.innerHeight;
@@ -102,49 +113,49 @@ function backgroundLoop(){
 	//50-50 chance between top and bottom, or left and right, depending on primary axis
 	let side = Math.random() > 0.5;
 	let sideOffset = 0;
-	
-	//May Robert C Martin forgive me for this conditional mess
-	if(onYAxis){
-	    if(side) sideOffset = window.innerWidth;
-	}
-	else{
-	    if(side) sideOffset = window.innerHeight;
+
+	if(side){
+	    sideOffset = onYAxis ? window.innerWidth : window.innerHeight;
 	}
 
 	if(onEdge){
+	    //Random position on edges
 	    if(onYAxis){
-		path.x = sideOffset;
-		path.y = randY;
-		if(side)velX*=-1;
+		//Y Axis
+		point.x = sideOffset;
+		point.y = randY;
+		if(side) velX*=-1;
 		velY*=Math.round(Math.random())*2-1;
 	    }
 	    else{
-		path.x = randX;
-		path.y = sideOffset;
+		//X Axis
+		point.x = randX;
+		point.y = sideOffset;
 		if(side)velY*=-1;
 		velX*=Math.round(Math.random())*2-1;
 	    }
 	}
 	else{
-	    path.x = randX;
-	    path.y = randY;
+	    //Random position on screen
+	    point.x = randX;
+	    point.y = randY;
 	    velX*=Math.round(Math.random())*2-1;
 	    velY*=Math.round(Math.random())*2-1;
 	}
 
 	//Attach path velocities
-	path.velX = velX;
-	path.velY = velY;
+	point.velX = velX;
+	point.velY = velY;
 
 	//console.log(velX);
 	//console.log(velY);
-	return path;
+	return point;
     }
     function getDist(x1,y1,x2,y2){
 	let distX = Math.abs(x1-x2);
 	let distY = Math.abs(y1-y2);
 
-	return Math.sqrt(Math.pow(distX,2)+Math.pow(distY,2));
+	return Math.sqrt((distX*distX)+(distY*distY));
     }
 
     function drawPoint(point){
@@ -166,19 +177,6 @@ function backgroundLoop(){
 	
 	c.lineTo(point2.x,point2.y);
     }
-
-    function createPoint(onEdge){
-	let path = genPath(onEdge);
-	let point = {};
-
-	//Copy values from path into point
-	point.x = path.x;
-	point.y = path.y;
-	point.velX = path.velX;
-	point.velY = path.velY;
-
-	return point;
-    };
 
     function connectPoints(point1,point2){
 	let dist = getDist(point1.x,point1.y,point2.x,point2.y);
